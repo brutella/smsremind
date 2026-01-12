@@ -1,6 +1,8 @@
 module github.com/brutella/smsremind
 
-go 1.23.6
+go 1.23.0
+
+toolchain go1.23.6
 
 require (
 	github.com/emersion/go-ical v0.0.0-20240127095438-fc1c9d8fb2b6
