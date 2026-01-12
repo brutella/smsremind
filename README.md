@@ -11,7 +11,7 @@ If an event includes a phone number, an sms is sent with a customizable message 
 The program expects the following environment variables.
 
 - `ASPSMS_USERKEY`: ASPSMS User Key → www.aspsms.at/
-- `ASPSMS_PASSWORD`: ASPSMS AP passwords
+- `ASPSMS_PASSWORD`: ASPSMS API password
 - `CALDAV_APPLEID`: The Apple ID for the CalDav server
 - `CALDAV_PASSWORD`: The app-specific password for the CalDav server → https://support.apple.com/en-us/102654
 
@@ -32,3 +32,5 @@ go run main.go \
     --sms-template="Reminder: Your appointment with me is tomorror at {{.StartTime}}. See you!" \
     --sms-sender="Your Friend"
 ```
+
+**DISCLAIMER: Some of the code was written by ChatGPT.**
