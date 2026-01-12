@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -30,8 +31,6 @@ var caldav = flag.String("caldav", "", "The caldav URL include the Apple ID and 
 var dryRun = flag.Bool("dry-run", true, "Do not send SMS – only print.")
 var msg = flag.String("sms-template", "Your next appointment is on {{ .StartDate }} at {{ .StartTime }}", "The SMS template")
 var sender = flag.String("sender", "Reminder", "The SMS originator name.")
-var aspsmsUserkey = flag.String("aspsms-userkey", "", "The ASPSMS Userkey")
-var aspsmsApiPwd = flag.String("aspsms-password", "", "The ASPSMS API password")
 var timezone = flag.String("timezone", "Europe/Vienna", "Timezone location")
 
 func main() {
@@ -39,8 +38,17 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
 func run() error {
 	flag.Parse()
+
+	aspsmsUserkey := os.Getenv("ASPSMS_USERKEY")
+	aspsmsApiPwd := os.Getenv("ASPSMS_PASSWORD")
+
+	if len(aspsmsUserkey) == 0 || len(aspsmsApiPwd) == 0 {
+		return errors.New("ASPSMS_USERKEY or ASPSMS_PASSWORD not specified")
+	}
+
 	msgTmpl, err := template.New("output").Parse(*msg)
 	if err != nil {
 		return err
@@ -66,7 +74,7 @@ func run() error {
 		return err
 	}
 
-	client := aspsms.NewClient(*aspsmsUserkey, *aspsmsApiPwd, *sender, 5*time.Second)
+	client := aspsms.NewClient(aspsmsUserkey, aspsmsApiPwd, *sender, 5*time.Second)
 
 	ctx := context.Background()
 	loc, err := time.LoadLocation(*timezone)
@@ -478,10 +486,6 @@ func reportCalendarQuery(ctx context.Context, c *http.Client, calURL *url.URL, u
 	}
 	return out, nil
 }
-
-/* =========================
-   iCalendar parsing helpers
-   ========================= */
 
 func eventsFromCalendar(c *ical.Calendar, defaultTZ *time.Location) ([]cal.Event, error) {
 	if c == nil {
