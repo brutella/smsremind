@@ -23,8 +23,8 @@ var stateDir = flag.String("state-dir", ".", "Directory used to store internal s
 var msg = flag.String("msg", "Your next appointment is on {{ .StartDate }} at {{ .StartTime }}", "The SMS template")
 var sender = flag.String("sender", "SMS", "The SMS originator name.")
 var dryRun = flag.Bool("dry-run", true, "Do not send SMS – only print.")
-var aspsmsUserkey = flag.String("aspsms_userkey", "", "The ASPSMS Userkey")
-var aspsmsApiPwd = flag.String("aspsms_password", "", "The ASPSMS API password")
+var aspsmsUserkey = flag.String("aspsms-userkey", "", "The ASPSMS Userkey")
+var aspsmsApiPwd = flag.String("aspsms-password", "", "The ASPSMS API password")
 
 type MsgProps struct {
 	Start time.Time
