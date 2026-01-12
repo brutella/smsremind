@@ -63,13 +63,9 @@ func (c *Client) SendSimpleTextSMS(recipientE164 string, text string) error {
 		return fmt.Errorf("http %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
-	// The WebAPI commonly returns an ErrorCode integer (0 == OK).
-	// Handle a few possible response shapes robustly:
-	//   1) plain "0"
-	//   2) JSON: {"ErrorCode":0,...}
-	//   3) other: treat as error text
+	// The WebAPI commonly returns an ErrorCode integer (1 == OK).
 	if code, descr, ok := parseError(body); ok {
-		if code == 0 {
+		if code == 0 || code == 1 {
 			return nil
 		}
 		// ASPSMS documents error codes like "Invalid UserKey", "Invalid Password", etc. :contentReference[oaicite:2]{index=2}
@@ -80,7 +76,6 @@ func (c *Client) SendSimpleTextSMS(recipientE164 string, text string) error {
 }
 
 func parseError(body []byte) (int, string, bool) {
-	// JSON object?
 	var obj struct {
 		ErrorCode        int    `json:"ErrorCode"`
 		ErrorDescription string `json:"ErrorDescription"`
