@@ -26,11 +26,14 @@ import (
 
 var stateDir = flag.String("state-dir", ".", "Directory used to store internal states.")
 var offset = flag.Int("offset", 1, "Number of days in the future from now for which a reminder should be sent.")
+
 var calendars = flag.String("calendars", "", "Command separates list of calendar names")
-var caldav = flag.String("caldav", "", "The caldav URL include the Apple ID and app-specific password.")
-var dryRun = flag.Bool("dry-run", true, "Do not send SMS – only print.")
+var caldav = flag.String("caldav", "", "URL of the CalDav server")
+
+var sender = flag.String("sms-sender", "Reminder", "The SMS sender name")
 var msg = flag.String("sms-template", "Your next appointment is on {{ .StartDate }} at {{ .StartTime }}", "The SMS template")
-var sender = flag.String("sender", "Reminder", "The SMS originator name.")
+
+var dryRun = flag.Bool("dry-run", false, "Do not send SMS – only print.")
 var timezone = flag.String("timezone", "Europe/Vienna", "Timezone location")
 
 func main() {
@@ -47,6 +50,13 @@ func run() error {
 
 	if len(aspsmsUserkey) == 0 || len(aspsmsApiPwd) == 0 {
 		return errors.New("ASPSMS_USERKEY or ASPSMS_PASSWORD not specified")
+	}
+
+	appleID := os.Getenv("CALDAV_APPLEID")
+	appPwd := os.Getenv("CALDAV_PASSWORD")
+
+	if len(appleID) == 0 || len(appPwd) == 0 {
+		return errors.New("CALDAV_APPLEID or CALDAV_PASSWORD not specified")
 	}
 
 	msgTmpl, err := template.New("output").Parse(*msg)
@@ -69,11 +79,6 @@ func run() error {
 	}
 	defer store.Close()
 
-	calURL, err := cal.ParseCaldavURL(*caldav)
-	if err != nil {
-		return err
-	}
-
 	client := aspsms.NewClient(aspsmsUserkey, aspsmsApiPwd, *sender, 5*time.Second)
 
 	ctx := context.Background()
@@ -84,9 +89,9 @@ func run() error {
 
 	day := time.Now().AddDate(0, 0, *offset)
 	query := Query{
-		Endpoint:  calURL.BaseURL.String(),
-		AppleId:   calURL.AppleID,
-		Password:  calURL.Password,
+		Endpoint:  *caldav,
+		AppleId:   appleID,
+		Password:  appPwd,
 		Start:     startOfDay(day, loc),
 		End:       endOfDay(day, loc),
 		Calendars: parseCalendarNames(*calendars),
