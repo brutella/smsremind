@@ -42,11 +42,26 @@ func main() {
 	}
 }
 
+func RequireEnv(key string) (string, error) {
+	value, ok := os.LookupEnv(key)
+	if !ok || value == "" {
+		return "", fmt.Errorf("required environment variable %q is not set", key)
+	}
+	return value, nil
+}
+
 func run() error {
 	flag.Parse()
 
-	aspsmsUserkey := os.Getenv("ASPSMS_USERKEY")
-	aspsmsApiPwd := os.Getenv("ASPSMS_PASSWORD")
+	aspsmsUserkey, err := RequireEnv("ASPSMS_USERKEY")
+	if err != nil {
+		return err
+	}
+
+	aspsmsApiPwd, err := RequireEnv("ASPSMS_PASSWORD")
+	if err != nil {
+		return err
+	}
 
 	if len(aspsmsUserkey) == 0 || len(aspsmsApiPwd) == 0 {
 		return errors.New("ASPSMS_USERKEY or ASPSMS_PASSWORD not specified")

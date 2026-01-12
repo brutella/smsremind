@@ -34,3 +34,40 @@ go run main.go \
 ```
 
 **DISCLAIMER: Some of the code was written by ChatGPT.**
+
+How to configure your Linux server to run.
+
+1. Create a dedicated `smsremind` user.
+
+```
+sudo useradd \
+  --system \
+  --create-home \
+  --home-dir /var/lib/smsremind \
+  --shell /usr/sbin/nologin \
+  smsremind
+  ```
+
+2. Store the environmne variables in a file
+
+`sudo vim /var/lib/smsremind/env`
+
+3. Set permissions
+
+```
+# User and group "smsremind" owns the /var/lib/smsmremind
+sudo chown -R smsremind:smsremind /var/lib/smsremind/
+# env file can only be read by the smsremind user.
+sudo chmod 600 /var/lib/smsremind/env
+```
+
+4. Configure a cron job to run at 9AM.
+
+```
+# /etc/cron.d/smsmreind
+0 9 * * * /usr/bin/env sh -c 'set -eu . /var/lib/smsremind/.config/smsremind/env; smsremind'
+```
+
+5. Set permission
+sudo chmod 644 /etc/cron.d/smsremind
+
