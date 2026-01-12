@@ -67,8 +67,15 @@ func run() error {
 		return errors.New("ASPSMS_USERKEY or ASPSMS_PASSWORD not specified")
 	}
 
-	appleID := os.Getenv("CALDAV_APPLEID")
-	appPwd := os.Getenv("CALDAV_PASSWORD")
+	appleID, err := RequireEnv("CALDAV_APPLEID")
+	if err != nil {
+		return err
+	}
+
+	appPwd, err := RequireEnv("CALDAV_PASSWORD")
+	if err != nil {
+		return err
+	}
 
 	if len(appleID) == 0 || len(appPwd) == 0 {
 		return errors.New("CALDAV_APPLEID or CALDAV_PASSWORD not specified")
