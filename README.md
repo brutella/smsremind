@@ -37,6 +37,8 @@ go run main.go \
 
 How to configure your Linux server to run.
 
+## Configurate a service
+
 1. Create a dedicated `smsremind` user.
 
 ```
@@ -48,26 +50,31 @@ sudo useradd \
   smsremind
   ```
 
-2. Store the environmne variables in a file
+2. Create the runit service *smsremind*:
 
-`sudo vim /var/lib/smsremind/env`
+Store the environment variables
+  ```
+  /etc/sv/smsremind/env/
+  ├── ASPSMS_USERKEY
+  ├── ASPSMS_PASSWORD
+  ├── CALDAV_APPLEID
+  └── CALDAV_PASSWORD
+  ```
 
-3. Set permissions
+3. Edit the `run` file for the service
 
+```sh
+#!/bin/sh -e
+exec 2>&1
+
+# Wait until 9AM
+snooze -H9
+
+# Run smsremind as user "smsremind"
+exec chpst -e env -u smsremind /root/go/bin/smsremind \
+    --offset=1 \
+    --calendars="My Private Calendar" \
+    --caldav=https://caldav.icloud.com/ \
+    --sms-template="Reminder: Your appointment with me is tomorror at {{.StartTime}}. See you!" \
+    --sms-sender="Your Friend"
 ```
-# User and group "smsremind" owns the /var/lib/smsmremind
-sudo chown -R smsremind:smsremind /var/lib/smsremind/
-# env file can only be read by the smsremind user.
-sudo chmod 600 /var/lib/smsremind/env
-```
-
-4. Configure a cron job to run at 9AM.
-
-```
-# /etc/cron.d/smsmreind
-0 9 * * * /usr/bin/env sh -c 'set -eu . /var/lib/smsremind/.config/smsremind/env; smsremind'
-```
-
-5. Set permission
-sudo chmod 644 /etc/cron.d/smsremind
-
