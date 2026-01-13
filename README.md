@@ -43,12 +43,10 @@ How to configure your Linux server to run.
 
 ```
 sudo useradd \
-  --system \
-  --create-home \
-  --home-dir /var/lib/smsremind \
+  --no-create-home \
   --shell /usr/sbin/nologin \
   smsremind
-  ```
+```
 
 2. Create the runit service *smsremind*:
 
