@@ -15,14 +15,27 @@ type Client struct {
 	password   string
 	originator string
 	client     *http.Client
+	endpoint   string
 }
 
 func NewClient(userKey, password, originator string, timeout time.Duration) *Client {
+	return NewClientWithHTTP(userKey, password, originator, &http.Client{Timeout: timeout}, "https://webapi.aspsms.com/SendSimpleSMS")
+}
+
+func NewClientWithHTTP(userKey, password, originator string, httpClient *http.Client, endpoint string) *Client {
+	if httpClient == nil {
+		httpClient = &http.Client{}
+	}
+	if strings.TrimSpace(endpoint) == "" {
+		endpoint = "https://webapi.aspsms.com/SendSimpleSMS"
+	}
+
 	return &Client{
 		userKey:    userKey,
 		password:   password,
 		originator: originator,
-		client:     &http.Client{Timeout: timeout},
+		client:     httpClient,
+		endpoint:   endpoint,
 	}
 }
 
@@ -38,8 +51,6 @@ func (c *Client) SendSimpleTextSMS(recipientE164 string, text string) error {
 		return fmt.Errorf("missing ASPSMS password")
 	}
 
-	endpoint := "https://webapi.aspsms.com/SendSimpleSMS"
-
 	q := url.Values{}
 	q.Set("UserKey", c.userKey)
 	q.Set("Password", c.password)
@@ -51,7 +62,7 @@ func (c *Client) SendSimpleTextSMS(recipientE164 string, text string) error {
 		q.Set("Originator", orig)
 	}
 
-	reqURL := endpoint + "?" + q.Encode()
+	reqURL := c.endpoint + "?" + q.Encode()
 	resp, err := c.client.Get(reqURL)
 	if err != nil {
 		return err

@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var ErrLockHeld = errors.New("lock already held")
+
 type Lock struct {
 	path string
 }
@@ -36,7 +38,7 @@ func AcquireLock(path string, maxAge time.Duration) (*Lock, error) {
 	}
 
 	if now.Sub(ts) < maxAge {
-		return nil, fmt.Errorf("lock already held (pid=%d, age=%s)", pid, now.Sub(ts))
+		return nil, fmt.Errorf("%w (pid=%d, age=%s)", ErrLockHeld, pid, now.Sub(ts))
 	}
 
 	// Stale lock → remove and retry once
