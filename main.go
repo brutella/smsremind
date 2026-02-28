@@ -29,6 +29,8 @@ var dryRun = flag.Bool("dry-run", false, "Do not send SMS – only print.")
 var timezone = flag.String("timezone", "Europe/Vienna", "Timezone location")
 
 func main() {
+	log.SetOutput(os.Stdout)
+
 	if err := run(); err != nil {
 		if errors.Is(err, app.ErrAlreadyRunning) {
 			os.Exit(0)
