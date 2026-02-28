@@ -48,6 +48,9 @@ func RequireEnv(key string) (string, error) {
 func run() error {
 	flag.Parse()
 
+	log.Printf("smsremind: starting state_dir=%q offset_days=%d calendars=%d dry_run=%t timezone=%q caldav_url=%q",
+		*stateDir, *offset, len(parseCalendarNames(*calendars)), *dryRun, *timezone, *caldavURL)
+
 	aspsmsUserkey, err := RequireEnv("ASPSMS_USERKEY")
 	if err != nil {
 		return err
@@ -64,11 +67,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("smsremind: configuration loaded sender=%q template_len=%d", *sender, len(*msg))
 
 	eventsClient, err := caldav.NewClient(*caldavURL, appleID, appPwd, caldav.NewHTTPClient(30*time.Second))
 	if err != nil {
 		return err
 	}
+	log.Printf("smsremind: caldav client initialized")
 
 	runner := app.Runner{
 		EventSource: eventsClient,
@@ -100,6 +105,7 @@ func run() error {
 		Timezone:        *timezone,
 	}
 
+	log.Printf("smsremind: executing reminder run")
 	return runner.Run(context.Background(), cfg)
 }
 
