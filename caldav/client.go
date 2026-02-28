@@ -83,21 +83,13 @@ func (c *Client) Events(ctx context.Context, start, end time.Time, calendars []s
 		return nil, fmt.Errorf("list calendars: %w", err)
 	}
 
-	var events []cal.Event
-	for _, calInfo := range calInfos {
-		if len(calendars) > 0 {
-			found := false
-			for _, name := range calendars {
-				if strings.EqualFold(calInfo.DisplayName, name) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
+	filtered, err := filterCalendars(calInfos, calendars)
+	if err != nil {
+		return nil, err
+	}
 
+	var events []cal.Event
+	for _, calInfo := range filtered {
 		icsBlobs, err := c.reportCalendarQuery(ctx, calInfo.URL, start, end)
 		if err != nil {
 			return nil, fmt.Errorf("report calendar %s: %w", calInfo.DisplayName, err)
@@ -124,6 +116,34 @@ func (c *Client) Events(ctx context.Context, start, end time.Time, calendars []s
 	}
 
 	return events, nil
+}
+
+func filterCalendars(calInfos []CalendarInfo, calendars []string) ([]CalendarInfo, error) {
+	if len(calendars) == 0 {
+		return calInfos, nil
+	}
+
+	available := make(map[string]CalendarInfo, len(calInfos))
+	for _, calInfo := range calInfos {
+		available[strings.ToLower(calInfo.DisplayName)] = calInfo
+	}
+
+	result := make([]CalendarInfo, 0, len(calendars))
+	missing := make([]string, 0)
+	for _, name := range calendars {
+		calInfo, ok := available[strings.ToLower(name)]
+		if !ok {
+			missing = append(missing, name)
+			continue
+		}
+		result = append(result, calInfo)
+	}
+
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("calendars not found: %v", missing)
+	}
+
+	return result, nil
 }
 
 func (c *Client) doDAV(ctx context.Context, method string, u *url.URL, depth string, body []byte) ([]byte, http.Header, int, error) {

@@ -112,6 +112,58 @@ func TestClientEventsMalformedICS(t *testing.T) {
 	}
 }
 
+func TestClientEventsFailsWhenRequestedCalendarIsMissing(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == "PROPFIND" && r.URL.Path == "/":
+			_, _ = io.WriteString(w, principalResponse("/principal/"))
+		case r.Method == "PROPFIND" && r.URL.Path == "/principal/":
+			_, _ = io.WriteString(w, homeSetResponse("/home/"))
+		case r.Method == "PROPFIND" && r.URL.Path == "/home/":
+			_, _ = io.WriteString(w, calendarsResponse())
+		default:
+			http.Error(w, "unexpected", http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL+"/", "u", "p", server.Client())
+	if err != nil {
+		t.Fatalf("NewClient error = %v", err)
+	}
+
+	_, err = client.Events(context.Background(), time.Now(), time.Now().Add(24*time.Hour), []string{"Missing"}, time.UTC)
+	if err == nil || !strings.Contains(err.Error(), "calendars not found") {
+		t.Fatalf("expected missing calendar error, got %v", err)
+	}
+}
+
+func TestClientEventsFailsWhenAnyRequestedCalendarIsMissing(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == "PROPFIND" && r.URL.Path == "/":
+			_, _ = io.WriteString(w, principalResponse("/principal/"))
+		case r.Method == "PROPFIND" && r.URL.Path == "/principal/":
+			_, _ = io.WriteString(w, homeSetResponse("/home/"))
+		case r.Method == "PROPFIND" && r.URL.Path == "/home/":
+			_, _ = io.WriteString(w, calendarsResponse())
+		default:
+			http.Error(w, "unexpected", http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL+"/", "u", "p", server.Client())
+	if err != nil {
+		t.Fatalf("NewClient error = %v", err)
+	}
+
+	_, err = client.Events(context.Background(), time.Now(), time.Now().Add(24*time.Hour), []string{"Work", "Missing"}, time.UTC)
+	if err == nil || !strings.Contains(err.Error(), "calendars not found") {
+		t.Fatalf("expected missing calendar error, got %v", err)
+	}
+}
+
 func principalResponse(href string) string {
 	return fmt.Sprintf(`<multistatus><response><propstat><prop><current-user-principal><href>%s</href></current-user-principal></prop></propstat></response></multistatus>`, href)
 }
