@@ -132,16 +132,18 @@ func (r Runner) Run(ctx context.Context, cfg Config) error {
 
 	for _, event := range events {
 		num := cal.EventPhoneNumber(event)
+		log.Printf("app: fetched event uid=%q summary=%q start=%s end=%s phone=%q", event.UID, event.Summary, event.Start.Format(time.RFC3339), event.End.Format(time.RFC3339), num)
 		if num == "" {
-			log.Printf("app: skipping event uid=%q summary=%q reason=no phone number", event.UID, event.Summary)
+			log.Printf("app: ignored event uid=%q summary=%q reason=no phone number", event.UID, event.Summary)
 			continue
 		}
 
 		key := eventMessageKey(event, cfg.OffsetDays)
 		if store.Exists(key) {
-			log.Printf("app: skipping event uid=%q summary=%q phone=%q reason=already sent key=%q", event.UID, event.Summary, num, key)
+			log.Printf("app: ignored event uid=%q summary=%q phone=%q reason=already sent key=%q", event.UID, event.Summary, num, key)
 			continue
 		}
+		log.Printf("app: selected event uid=%q summary=%q phone=%q key=%q", event.UID, event.Summary, num, key)
 
 		var buf bytes.Buffer
 		if err := msgTmpl.Execute(&buf, event); err != nil {
