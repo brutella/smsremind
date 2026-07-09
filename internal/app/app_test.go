@@ -144,6 +144,38 @@ func TestRunnerSendsAndMarks(t *testing.T) {
 	}
 }
 
+func TestRunnerSendsForPhoneNumberInDescription(t *testing.T) {
+	e := baseEvent()
+	e.Summary = "Matthias Hochgatterer"
+	e.Description = "----( Video Call )----\ntel:06604670967\n---===---"
+	events := &fakeEventSource{events: []cal.Event{e}}
+	sms := &fakeSMS{}
+	store := &fakeStore{exists: map[string]bool{}}
+
+	r := Runner{
+		EventSource: events,
+		SMS:         sms,
+		OpenStore: func(string) (IdempotencyStore, error) {
+			return store, nil
+		},
+		AcquireLock: func(string, time.Duration) (Releaser, error) {
+			return &fakeLock{}, nil
+		},
+		Clock:  fakeClock{now: time.Date(2026, 2, 26, 9, 0, 0, 0, time.UTC)},
+		Output: &bytes.Buffer{},
+	}
+
+	if err := r.Run(context.Background(), defaultConfig()); err != nil {
+		t.Fatalf("Run error = %v", err)
+	}
+	if len(sms.sent) != 1 {
+		t.Fatalf("expected 1 sms, got %d", len(sms.sent))
+	}
+	if got, want := sms.sent[0].number, "+436604670967"; got != want {
+		t.Fatalf("sent number = %q, want %q", got, want)
+	}
+}
+
 func TestRunnerDryRunSkipsSendAndMark(t *testing.T) {
 	events := &fakeEventSource{events: []cal.Event{baseEvent()}}
 	sms := &fakeSMS{}

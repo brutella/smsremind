@@ -14,14 +14,17 @@ func TestSendSimpleTextSMSSuccess(t *testing.T) {
 		if got := r.URL.Query().Get("MSISDN"); got != "+436604670967" {
 			t.Fatalf("unexpected MSISDN: %s", got)
 		}
-		if got := r.URL.Query().Get("Originator"); got != "Reminder" {
+		if got := r.URL.Query().Get("Originator"); got != "+436605555675" {
 			t.Fatalf("unexpected originator: %s", got)
+		}
+		if !strings.Contains(r.URL.RawQuery, "Originator=%2B436605555675") {
+			t.Fatalf("originator not correctly encoded: %s", r.URL.RawQuery)
 		}
 		_, _ = io.WriteString(w, `{"ErrorCode":1,"ErrorDescription":"OK"}`)
 	}))
 	defer server.Close()
 
-	client := NewClientWithHTTP("key", "pwd", "Reminder", server.Client(), server.URL)
+	client := NewClientWithHTTP("key", "pwd", "+436605555675", server.Client(), server.URL)
 	if err := client.SendSimpleTextSMS("+436604670967", "hello"); err != nil {
 		t.Fatalf("SendSimpleTextSMS error = %v", err)
 	}

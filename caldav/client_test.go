@@ -10,7 +10,34 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/brutella/smsremind/cal"
+	ical "github.com/emersion/go-ical"
 )
+
+func TestEventsFromCalendarDecodesEscapedDescription(t *testing.T) {
+	ics := "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:video-call\nDTSTART:20260710T090000\nDTEND:20260710T100000\nSUMMARY:Matthias Hochgatterer\nDESCRIPTION:----( Video Call )----\\ntel:06604670967\\n---===---\nEND:VEVENT\nEND:VCALENDAR\n"
+	decoded, err := ical.NewDecoder(strings.NewReader(ics)).Decode()
+	if err != nil {
+		t.Fatalf("Decode error = %v", err)
+	}
+
+	events, err := eventsFromCalendar(decoded, time.UTC)
+	if err != nil {
+		t.Fatalf("eventsFromCalendar error = %v", err)
+	}
+
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	wantDescription := "----( Video Call )----\ntel:06604670967\n---===---"
+	if events[0].Description != wantDescription {
+		t.Fatalf("Description = %q, want %q", events[0].Description, wantDescription)
+	}
+	if got, want := cal.EventPhoneNumber(events[0]), "+436604670967"; got != want {
+		t.Fatalf("EventPhoneNumber = %q, want %q", got, want)
+	}
+}
 
 func TestClientEventsSuccessAndFilter(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

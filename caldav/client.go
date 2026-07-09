@@ -405,13 +405,26 @@ func eventsFromCalendar(c *ical.Calendar, defaultTZ *time.Location) ([]cal.Event
 			end = start
 		}
 
+		summary, err := firstTextPropValue(c.Props, "SUMMARY")
+		if err != nil {
+			return nil, fmt.Errorf("parse SUMMARY for %s: %w", uid, err)
+		}
+		description, err := firstTextPropValue(c.Props, "DESCRIPTION")
+		if err != nil {
+			return nil, fmt.Errorf("parse DESCRIPTION for %s: %w", uid, err)
+		}
+		comment, err := firstTextPropValue(c.Props, "COMMENT")
+		if err != nil {
+			return nil, fmt.Errorf("parse COMMENT for %s: %w", uid, err)
+		}
+
 		out = append(out, cal.Event{
 			UID:         uid,
 			Start:       start,
 			End:         end,
-			Summary:     firstPropValue(c.Props, "SUMMARY"),
-			Description: firstPropValue(c.Props, "DESCRIPTION"),
-			Comment:     firstPropValue(c.Props, "COMMENT"),
+			Summary:     summary,
+			Description: description,
+			Comment:     comment,
 		})
 	}
 	return out, nil
@@ -425,12 +438,30 @@ func firstProp(props ical.Props, name string) *ical.Prop {
 	return &ps[0]
 }
 
+// firstPropValue returns the raw unfolded iCalendar value without TEXT
+// unescaping. Use this for opaque identifiers and structured values.
 func firstPropValue(props ical.Props, name string) string {
 	p := firstProp(props, name)
 	if p == nil {
 		return ""
 	}
 	return strings.TrimSpace(p.Value)
+}
+
+// firstTextPropValue decodes RFC 5545 TEXT escaping, e.g. "\n" into a
+// newline. Use firstPropValue instead for opaque/raw fields such as UID and
+// date/time properties, where changing the raw value can affect identity.
+func firstTextPropValue(props ical.Props, name string) (string, error) {
+	p := firstProp(props, name)
+	if p == nil {
+		return "", nil
+	}
+
+	text, err := p.Text()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(text), nil
 }
 
 func parseICalDateTime(p *ical.Prop, defaultTZ *time.Location) (time.Time, bool, error) {
