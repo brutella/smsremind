@@ -2,6 +2,7 @@ package cal
 
 import (
 	"strings"
+	"unicode"
 
 	"github.com/nyaruka/phonenumbers"
 )
@@ -21,6 +22,13 @@ func format(num *phonenumbers.PhoneNumber) string {
 }
 
 func textPhoneNumber(text string) *phonenumbers.PhoneNumber {
+	// Calendar text can wrap phone numbers in invisible direction controls.
+	text = strings.Map(func(r rune) rune {
+		if unicode.Is(unicode.Bidi_Control, r) {
+			return -1
+		}
+		return r
+	}, text)
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
 		if pn, err := phonenumbers.Parse(line, "AT"); err == nil {
