@@ -76,3 +76,11 @@ exec chpst -e env -u smsremind /root/go/bin/smsremind \
     --sms-template="Reminder: Your appointment with me is tomorror at {{.StartTime}}. See you!" \
     --sms-sender="Your Friend"
 ```
+
+4. Install the latest version of `smsremind`
+
+```sh
+go install github.com/brutella/smsremind@main
+```
+
+Check the installed binary version via `go version -m <path-to-smsremind>`
